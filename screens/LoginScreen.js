@@ -6,6 +6,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import * as ImagePicker from 'expo-image-picker';
 import { baseUrl } from '../shared/baseUrl';
 import logo from '../assets/images/logo.png';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { SaveFormat } from "expo-image-manipulator";
 
 const LoginTab = ({ navigation }) => {
     const [username, setUsername] = useState('');
@@ -138,9 +140,23 @@ const RegisterTab = () => {
         }
     }
 
+    const getImageFromGallery = async () => {
+        const mediaLibraryPermission = await ImagePicker.requestCameraPermissionsAsync();
+
+        if (mediaLibraryPermission.status === 'granted') {
+            const capturedImage = await ImagePicker.launchImageLibraryAsync({
+                allowsEditing: true,
+                aspect: [1, 1]
+            });
+            if (!capturedImage.cancelled) {
+                console.log(capturedImage)
+                processImage(capturedImage.uri)
+            }
+        }
+    }
+
     const getImageFromCamera = async () => {
-        const cameraPermission = 
-            await ImagePicker.requestCameraPermissionsAsync();
+        const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
 
         if (cameraPermission.status === 'granted') {
             const capturedImage = await ImagePicker.launchCameraAsync({
@@ -149,9 +165,20 @@ const RegisterTab = () => {
             });
             if (!capturedImage.cancelled){
                 console.log(capturedImage);
-                setImageUrl(capturedImage.uri);
+                processImage(capturedImage.uri)
             }
         }
+    }
+
+    const processImage = async (imgUri) => {
+        const processedImage = await ImageManipulator.manipulateAsync(
+            imgUri,
+            [{ resize: { width: 400 } }],
+            { format: SaveFormat.PNG }
+        );
+        JSON.stringify(processedImage.uri)
+        console.log(processedImage)
+        setImageUrl(processedImage.uri)
     }
 
     return (
@@ -164,6 +191,7 @@ const RegisterTab = () => {
                         style={styles.image}
                     />
                     <Button title='Camera' onPress={getImageFromCamera} />
+                    <Button title='Gallery' onPress={getImageFromGallery} />
                 </View>
                 <Input
                     placeholder="Username"
